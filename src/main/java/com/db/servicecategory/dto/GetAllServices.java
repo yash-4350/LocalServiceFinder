@@ -1,12 +1,13 @@
-package com.db.servicecategory;
+package com.db.servicecategory.dto;
 
 import com.db.common.Response;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class GetAllServices extends Response {
     private List<ServiceCategoryResponse> data;
-
 }

@@ -42,8 +42,9 @@ public class User {
     @CreationTimestamp
     private LocalDateTime createDate;
 
-    // --- Helper methods for bidirectional synchronization ---
+    private Boolean approved;
 
+    // --- Helper methods for bidirectional synchronization ---
     public void addAddress(Address address) {
         addresses.add(address);
         address.setUser(this);
@@ -54,7 +55,4 @@ public class User {
         address.setUser(null);
     }
 
-    public void setApproved(boolean b) {
-
-    }
 }

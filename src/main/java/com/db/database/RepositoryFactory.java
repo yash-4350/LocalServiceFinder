@@ -15,7 +15,7 @@ public class RepositoryFactory {
 
     @Autowired private RolesRepository rolesRepository;
 
-    @Autowired private PermissionRepository permissionRepository;
+    @Autowired private PermissionsRepository permissionRepository;
 
     @Autowired private AddressRepository addressRepository;
 

@@ -1,10 +1,12 @@
 package com.db.user.controller;
 
-
+import com.db.common.Response;
 import com.db.database.entities.Booking;
 import com.db.database.entities.Payment;
+import com.db.user.dto.BookingListResponse;
 import com.db.user.dto.BookingRequest;
 import com.db.user.dto.PaymentRequest;
+import com.db.user.dto.ReviewRequest;
 import com.db.user.service.BookingService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,15 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
 @RequestMapping("/api/bookings")
 public class BookingController {
 
-
     @Autowired
     BookingService bookingService;
-
     @PostMapping
     public ResponseEntity<?> createBooking(@Valid @RequestBody BookingRequest request) {
         try {
@@ -31,8 +30,6 @@ public class BookingController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
-
-
     @PostMapping(value = "/payment")
     public ResponseEntity<?> savePayment(@Valid @RequestBody PaymentRequest request) {
         try {
@@ -42,11 +39,11 @@ public class BookingController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+    // ... inside BookingController.java ...
     @GetMapping("/confirm/{id}")
     public ResponseEntity<String> confirmBooking(@PathVariable Long id) {
         try {
             bookingService.confirmBooking(id);
-
 
             // Return a simple HTML success page
             String htmlResponse = "<html><body style='font-family: Arial, sans-serif; text-align: center; padding: 50px;'>"
@@ -54,7 +51,6 @@ public class BookingController {
                     + "<p>You have successfully accepted the booking. The customer is waiting for you.</p>"
                     + "</body></html>";
             return ResponseEntity.ok().body(htmlResponse);
-
 
         } catch (RuntimeException e) {
             // Return a simple HTML error page if it was already confirmed or not found
@@ -66,4 +62,38 @@ public class BookingController {
         }
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<BookingListResponse> getUserBookings(@PathVariable Long userId) {
+        BookingListResponse response = bookingService.getUserBookings(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/review")
+    public ResponseEntity<Response> addReview(@Valid @RequestBody ReviewRequest request) {
+        try {
+            Response response = bookingService.addReview(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            Response errorResponse = new Response();
+            errorResponse.setResponseCode("99999999");
+            errorResponse.setResponseMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @PutMapping("/{id}/complete")
+    public ResponseEntity<Response> completeBooking(@PathVariable Long id) {
+        try {
+            bookingService.completeBooking(id);
+            Response response = new Response();
+            response.setResponseCode("00000000");
+            response.setResponseMessage("Booking marked as completed.");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Response errorResponse = new Response();
+            errorResponse.setResponseCode("99999999");
+            errorResponse.setResponseMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
 }

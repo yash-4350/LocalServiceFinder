@@ -1,9 +1,7 @@
 package com.db.auth.service;
 
-import com.db.auth.dto.ProviderOnboardingRequest;
-import com.db.auth.dto.ScheduleRequest;
-import com.db.auth.dto.SignUpRequest;
-import com.db.auth.service.IAuthService;
+import com.db.auth.dto.*;
+import com.db.common.Constants;
 import com.db.database.RepositoryFactory;
 import com.db.database.entities.*;
 import com.db.integration.EmailService;
@@ -15,96 +13,78 @@ import org.springframework.stereotype.Service;
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 @Service
-public class AuthServiceImpl implements IAuthService {
-    @Autowired
-    RepositoryFactory repositoryFactory;
+public class AuthServiceImpl implements IAuthService{
 
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private EmailService emailService;
+    @Autowired private RepositoryFactory repositoryFactory;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private EmailService emailService;
 
     @Override
-    public User registerUser(SignUpRequest request) {
-
+    public SignUpResponse registerUser(SignUpRequest request) {
         if (repositoryFactory.getUserRepository().existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Error: Email is already in use !!!");
+            throw new RuntimeException("Error: Email is already in use!");
         }
 
         User user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setCellPhone(request.getCellphone());
+        user.setCellPhone(request.getCellPhone());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        //     Role userRole = repositoryFactory.getRolesRepository().findByName("USER);
-        Role userRole = repositoryFactory.getRolesRepository().findByName(request.getRole());
-        if (userRole == null) {
-            throw new RuntimeException("Role not found");
-        }
+        Role userRole = repositoryFactory.getRolesRepository().findByName(request.getRole())
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
         user.setRole(userRole);
 
-        if (request.getRole().equalsIgnoreCase("PROVIDER")) {
-            user.setApproved(false);
+        // Map the address from the request
+        Address newAddress = new Address();
+        newAddress.setAddressLine1(request.getAddress().getAddressLine1());
+        newAddress.setAddressLine2(request.getAddress().getAddressLine2());
+        newAddress.setCity(request.getAddress().getCity());
+        newAddress.setState(request.getAddress().getState());
+        newAddress.setZipCode(request.getAddress().getZipCode());
+        newAddress.setAddressType(request.getAddress().getAddressType());
+        newAddress.setVersion(0L);
+        // Use the helper method we created earlier to keep the relationship in sync
+        user.addAddress(newAddress);
 
-        } else {
-            user.setApproved(true);
-        }
-        if (request.getAddress() != null) {
-            Address newaddress = new Address();
-            newaddress.setAddressLine1(request.getAddress().getAddressLine1());
-            newaddress.setAddressLine2(request.getAddress().getAddressLine2());
-            newaddress.setCity(request.getAddress().getCity());
-            newaddress.setState(request.getAddress().getState());
-            newaddress.setZipCode(request.getAddress().getZipCode());
-            newaddress.setAddressType(request.getAddress().getAddressType());
-            newaddress.setVersion(0L);
-
-            user.addAddress(newaddress);
-        }
-
-        return repositoryFactory.getUserRepository().save(user);
+        // Saving the user will cascade and save the address to the addresses table
+        User save = repositoryFactory.getUserRepository().save(user);
+        SignUpResponse signUpResponse=new SignUpResponse();
+        signUpResponse.setResponseCode(Constants.SUCCESS_CODE);
+        signUpResponse.setUserId(String.valueOf(save.getId()));
+        return signUpResponse;
     }
 
     @Override
-    public ServiceProvider onboardProvider(ProviderOnboardingRequest request) throws MessagingException, UnsupportedEncodingException
-    {
+    public ServiceProvider onboardProvider(ProviderOnboardingRequest request) throws MessagingException, UnsupportedEncodingException {
         User user = repositoryFactory.getUserRepository().findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-
-        if (user.getRole() == null || !user.getRole().getName().equalsIgnoreCase("PROVIDER")) {
+        if (user.getRole() == null || !user.getRole().getName().equals("PROVIDER")) {
             throw new RuntimeException("Error: Only users with ROLE_PROVIDER can onboard.");
         }
-
-
 
         if (repositoryFactory.getServiceProviderRepository().existsByUserId(user.getId())) {
             throw new RuntimeException("Error: User has already onboarded.");
         }
 
-
         // --- UPDATED: Fetch multiple categories ---
         List<ServiceCategory> categories = repositoryFactory.getServiceCategoryRepository().findAllById(request.getCategoryIds());
-
 
         // Ensure all provided IDs were valid and found in the DB
         if (categories.isEmpty() || categories.size() != request.getCategoryIds().size()) {
             throw new RuntimeException("Error: One or more Service Categories are invalid or do not exist.");
         }
 
-
         ServiceProvider providerProfile = new ServiceProvider();
         providerProfile.setUser(user);
 
-
         // Set the collection of categories
         providerProfile.setServiceCategories(new HashSet<>(categories));
-
 
         providerProfile.setExperienceYears(request.getExperienceYears());
         providerProfile.setHourlyRate(request.getHourlyRate());
@@ -116,23 +96,19 @@ public class AuthServiceImpl implements IAuthService {
                 throw new RuntimeException("Error: End time cannot be before Start time on " + scheduleReq.getDayOfWeek());
             }
 
-
             Schedule newSchedule = new Schedule();
             newSchedule.setDayOfWeek(scheduleReq.getDayOfWeek());
             newSchedule.setStartTime(scheduleReq.getStartTime());
             newSchedule.setEndTime(scheduleReq.getEndTime());
 
-
             providerProfile.addSchedule(newSchedule);
         }
-
 
         ServiceProvider savedProvider = repositoryFactory.getServiceProviderRepository().save(providerProfile);
         // Extract category names for the email
         String categoryNames = savedProvider.getServiceCategories().stream()
                 .map(ServiceCategory::getName)
                 .reduce((a, b) -> a + ", " + b).orElse("Unknown");
-
 
         // Trigger the email to the Admin (run asynchronously in production, but fine synchronously for now)
         emailService.sendProviderVerificationEmail(
@@ -141,16 +117,32 @@ public class AuthServiceImpl implements IAuthService {
                 categoryNames
         );
 
-
         return savedProvider;
     }
 
     @Override
-    public List<ServiceCategory> getAllServiceCategories() {
-        List<ServiceCategory> all = repositoryFactory.getServiceCategoryRepository().findAll();
-        return all;
+    public LoginResponse loginUser(LoginRequest request) {
+        LoginResponse response=new LoginResponse();
+        if(null==request.getEmail() || null==request.getPassword()){
+            response.setResponseCode(Constants.ERROR_CODE);
+            response.setResponseMessage("Email or password is null");
+            return response;
+        }
+        Optional<User> optionalUsers = repositoryFactory.getUserRepository().findByEmail(request.getEmail());
+        if(optionalUsers.isEmpty()){
+            response.setResponseCode(Constants.ERROR_CODE);
+            response.setResponseMessage("User does not exist with this email");
+            return response;
+        }
+        if(!passwordEncoder.matches(request.getPassword(),optionalUsers.get().getPassword())){
+            response.setResponseCode(Constants.ERROR_CODE);
+            response.setResponseMessage("Password is incorrect");
+            return response;
+        }
+        response.setResponseCode(Constants.SUCCESS_CODE);
+        response.setResponseMessage("Login Successful");
+        response.setUserId(String.valueOf(optionalUsers.get().getId()));
+        response.setUserRole(optionalUsers.get().getRole().getName());
+        return response;
     }
 }
-
-
-

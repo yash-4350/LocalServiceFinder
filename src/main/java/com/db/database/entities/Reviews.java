@@ -1,19 +1,17 @@
 package com.db.database.entities;
-
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+
 
 @Entity
 @Table(name = "reviews")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Review {
+public class Reviews {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

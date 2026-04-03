@@ -7,18 +7,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.io.UnsupportedEncodingException;
-
 
 @RestController
 @RequestMapping("/api/admin/providers")
 public class ServiceProviderController {
 
-
     @Autowired
     ServiceProviderService serviceProviderService;
-
 
     // This is the API called when the Admin clicks the email link
     @GetMapping("/verify/{id}")
@@ -32,7 +28,6 @@ public class ServiceProviderController {
                     + "</body></html>";
             return ResponseEntity.ok().body(htmlResponse);
 
-
         } catch (RuntimeException e) {
             String errorHtml = "<html><body>"
                     + "<h2 style='color:red;'>Verification Failed</h2>"
@@ -43,6 +38,5 @@ public class ServiceProviderController {
             throw new RuntimeException(e);
         }
     }
-
 
 }

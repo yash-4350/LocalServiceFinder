@@ -28,6 +28,7 @@ public class Address {
     // A label for the address (e.g., "Home", "Office")
     private String addressType;
 
+    // Optimistic locking for concurrent updates
     private Long version;
 
     // Bidirectional mapping back to the User

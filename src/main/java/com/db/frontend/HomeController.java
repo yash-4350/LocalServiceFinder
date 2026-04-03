@@ -14,11 +14,41 @@ public class HomeController {
         // Returns the template name "index.html" (without the extension)
         return "index";
     }
-
+    // Add this to HomeController.java
     @GetMapping("/provider-signup")
     public String providerSignUp(Model model) {
         model.addAttribute("pageTitle", "Become a Professional - Local Service Finder");
         return "provider-signup";
     }
+    @GetMapping("/provider-onboarding")
+    public String providerOnboarding(Model model) {
+        model.addAttribute("pageTitle", "Complete Your Profile - Local Service Finder");
+        return "provider-onboarding";
+    }
+    @GetMapping("/login")
+    public String loginPage(Model model) {
+        model.addAttribute("pageTitle", "Login - Local Service Finder");
+        return "login";
+    }
 
+    @GetMapping("/user-dashboard")
+    public String userDashboard(Model model) {
+        model.addAttribute("pageTitle", "User Dashboard - Local Service Finder");
+        return "user-dashboard";
+    }
+    @GetMapping("/providers")
+    public String providersList(Model model) {
+        model.addAttribute("pageTitle", "Available Providers - Local Service Finder");
+        return "providers";
+    }
+    @GetMapping("/my-bookings")
+    public String myBookings(Model model) {
+        model.addAttribute("pageTitle", "My Bookings - Local Service Finder");
+        return "my-bookings";
+    }
+    @GetMapping("/signup")
+    public String userSignUp(Model model) {
+        model.addAttribute("pageTitle", "Create an Account - Local Service Finder");
+        return "signup";
+    }
 }

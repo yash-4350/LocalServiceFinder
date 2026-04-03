@@ -1,10 +1,7 @@
 package com.db.database.entities;
-
 import com.db.database.enums.BookingStatus;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
@@ -39,7 +36,6 @@ public class Booking {
     private LocalDateTime createDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "service_category_id", nullable = false)
     private ServiceCategory serviceCategory;
-
 }

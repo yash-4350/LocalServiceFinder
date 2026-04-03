@@ -4,9 +4,9 @@ import com.db.database.entities.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import javax.swing.text.html.Option;
+import java.util.Optional;
 
 @Repository
 public interface RolesRepository extends JpaRepository<Role,Long> {
-   Role findByName(String name);
+   Optional<Role> findByName(String name);
 }
