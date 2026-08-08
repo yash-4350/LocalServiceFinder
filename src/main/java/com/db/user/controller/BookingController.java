@@ -96,4 +96,33 @@ public class BookingController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
+    @GetMapping("/provider/{providerId}")
+    public ResponseEntity<BookingListResponse> getProviderBookings(@PathVariable Long providerId) {
+        // You'll need to implement getProviderBookings in your BookingService
+        BookingListResponse response = bookingService.getProviderBookings(providerId);
+        return ResponseEntity.ok(response);
+    }
+
+
+        // --- ADD/UPDATE THIS: Status Update for Dashboard ---
+        // Instead of returning HTML (like your /confirm/{id} does),
+        // it's better to return a JSON Response for the JS Dashboard to handle.
+        @PutMapping("/{id}/status")
+        public ResponseEntity<Response> updateBookingStatus(
+                @PathVariable Long id,
+                @RequestParam String status) {
+            try {
+                bookingService.updateStatus(id, status); // Logic: ACCEPTED, REJECTED, etc.
+                Response response = new Response();
+                response.setResponseCode("00000000");
+                response.setResponseMessage("Booking status updated to " + status);
+                return ResponseEntity.ok(response);
+            } catch (RuntimeException e) {
+                Response errorResponse = new Response();
+                errorResponse.setResponseCode("99999999");
+                errorResponse.setResponseMessage(e.getMessage());
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+        }
 }

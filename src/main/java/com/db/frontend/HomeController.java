@@ -51,4 +51,10 @@ public class HomeController {
         model.addAttribute("pageTitle", "Create an Account - Local Service Finder");
         return "signup";
     }
+
+    @GetMapping("/provider-dashboard")
+    public String showDashboard(Model model) {
+        model.addAttribute("pageTittle","Provider-dashboard");
+        return "provider-dashboard";
+    }
 }

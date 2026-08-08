@@ -249,4 +249,66 @@ public class BookingServiceImpl implements BookingService {
 
         repositoryFactory.getBookingRepository().save(booking);
     }
+
+    @Override
+    public BookingListResponse getProviderBookings(Long providerId) {
+        List<Booking> bookings = repositoryFactory.getBookingRepository()
+                .findByServiceProviderIdOrderByAppointmentDateDescAppointmentTimeDesc(providerId);
+
+        List<BookingResponse> bookingResponses = bookings.stream().map(booking -> {
+            BookingResponse dto = new BookingResponse();
+            dto.setBookingId(booking.getId());
+
+            // Map Customer Details
+            if (booking.getUser() != null) {
+                String fullName = booking.getUser().getFirstName() + " " + booking.getUser().getLastName();
+                dto.setCustomerName(fullName);
+//                dto.setCustomerAddress(booking.getUser().getAddresses().toString());
+                dto.setCustomerPhone(booking.getUser().getCellPhone());
+            }
+
+            dto.setCategoryName(booking.getServiceCategory().getName());
+            dto.setAppointmentDate(booking.getAppointmentDate().toString());
+            dto.setAppointmentTime(booking.getAppointmentTime().toString());
+            dto.setStatus(booking.getStatus().name());
+
+            return dto;
+        }).toList();
+
+        BookingListResponse response = new BookingListResponse();
+        response.setResponseCode("00000000");
+        response.setResponseMessage("Success");
+        response.setData(bookingResponses);
+        return response;
+    }
+
+    @Transactional
+    @Override
+    public void updateStatus(Long id, String status) {
+        Booking booking = repositoryFactory.getBookingRepository().findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Convert string status to your BookingStatus Enum
+        try {
+            BookingStatus newStatus = BookingStatus.valueOf(status.toUpperCase());
+
+            // Add business logic: e.g., don't allow changing COMPLETED bookings
+            if (booking.getStatus() == BookingStatus.COMPLETED) {
+                throw new RuntimeException("Cannot change status of a completed booking.");
+            }
+
+            booking.setStatus(newStatus);
+            repositoryFactory.getBookingRepository().save(booking);
+
+            // Optional: Trigger email to customer if REJECTED or CONFIRMED
+            if (newStatus == BookingStatus.CONFIRMED) {
+                // reuse your existing email logic here
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid status: " + status);
+        }
+    }
+
+
 }

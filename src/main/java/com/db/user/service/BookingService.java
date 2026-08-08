@@ -15,4 +15,8 @@ public interface BookingService {
     public BookingListResponse getUserBookings(Long userId);
     public Response addReview(ReviewRequest request);
     public void completeBooking(Long bookingId);
-}
+
+    public BookingListResponse getProviderBookings(Long providerId);
+    public void updateStatus(Long id, String status);
+
+    }
